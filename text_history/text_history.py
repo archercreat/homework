@@ -27,17 +27,20 @@ class TextHistory:
 	def optimization(self, first, second):
 		# print(type(first))
 		prev = first[-1] if len(first) else None
-		if type(prev) is InsertAction and type(second) is InsertAction:
+		if isinstance(prev, InsertAction) and isinstance(second, InsertAction):
 			if prev._pos + len(prev._text) == second.pos:
-				return first[:-1] + [InsertAction(prev._pos, prev._text + second._text, prev.from_version, second.to_version)]
+				return first[:-1] +\
+				[InsertAction(prev._pos, prev._text + second._text, prev.from_version, second.to_version)]
 
-		if type(prev) is ReplaceAction and type(second) is ReplaceAction:
+		if isinstance(prev, ReplaceAction) and isinstance(second, ReplaceAction):
 			if prev._pos + len(prev._text) == second.pos:
-				return first[:-1] + [ReplaceAction(prev._pos, prev._text + second._text, prev.from_version, second.to_version)]
+				return first[:-1] +\
+				[ReplaceAction(prev._pos, prev._text + second._text, prev.from_version, second.to_version)]
 
-		if type(prev) is DeleteAction and type(second) is DeleteAction:
+		if isinstance(prev, DeleteAction) and isinstance(second, DeleteAction):
 			if prev._pos == second._pos:
-				return first[:-1] + [DeleteAction(prev._pos, prev._length + second._length, prev.from_version, second.to_version)]
+				return first[:-1] +\
+				[DeleteAction(prev._pos, prev._length + second._length, prev.from_version, second.to_version)]
 		return first + [second]
 
 	def get_actions(self, from_version=0, to_version=None):
