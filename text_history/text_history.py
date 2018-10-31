@@ -20,6 +20,7 @@ class TextHistory:
 		if job.from_version != self._version:
 			raise ValueError('versions does not match')
 		self._text = job.apply(self._text)
+		job._to_version = job._to_version+1
 		self._version = job.to_version
 		self._history.append(job)
 		return job.to_version
@@ -55,19 +56,18 @@ class TextHistory:
 	def insert(self, text, pos=None):
 		if pos is None:
 			pos = len(self._text)
-		job = InsertAction(pos, text, self._version, self._version+1)
+		job = InsertAction(pos, text, self._version, self._version)
 		return self.action(job)
 
 	def delete(self, pos, length):
-		job = DeleteAction(pos, length, self._version, self._version+1)
+		job = DeleteAction(pos, length, self._version, self._version)
 		return self.action(job)
 
 	def replace(self, text, pos=None):
 		if pos is None:
 			pos = len(self._text)
-		job = ReplaceAction(pos, text, self._version, self._version+1)
+		job = ReplaceAction(pos, text, self._version, self._version)
 		return self.action(job)
-
 
 
 
