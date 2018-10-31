@@ -20,7 +20,7 @@ class TextHistory:
 		if job.from_version != self._version:
 			raise ValueError('versions does not match')
 		self._text = job.apply(self._text)
-		job._to_version = job._to_version+1
+		job._to_version += 1
 		self._version = job.to_version
 		self._history.append(job)
 		return job.to_version
