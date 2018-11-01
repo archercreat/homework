@@ -27,12 +27,19 @@ class ServerBaseTest(TestCase):
         return data
 
     def test_base_scenario(self):
+        # adding task queue 1, len 5 data 12345
         task_id = self.send(b'ADD 1 5 12345')
+        # check if in queue
         self.assertEqual(b'YES', self.send(b'IN 1 ' + task_id))
 
+        # getting the task
         self.assertEqual(task_id + b' 5 12345', self.send(b'GET 1'))
+        # checking if task is in queue, it seems that multiple ppl can work on the same task
         self.assertEqual(b'YES', self.send(b'IN 1 ' + task_id))
+
+        # accept task 
         self.assertEqual(b'YES', self.send(b'ACK 1 ' + task_id))
+        # accept same task but this time it prints NO coz i was deleted from the queue
         self.assertEqual(b'NO', self.send(b'ACK 1 ' + task_id))
         self.assertEqual(b'NO', self.send(b'IN 1 ' + task_id))
 
