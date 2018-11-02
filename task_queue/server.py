@@ -1,25 +1,25 @@
 
 import argparse
 import socket
-import time
-import json
 from datetime import datetime
 import sys
 import os
 import pickle
-from collections import OrderedDict, deque
-from uuid import uuid1
+from collections import deque
+from uuid import uuid4
 
 
 class Task:
 	def __init__(self, length, data):
 		self.length = length
 		self.data = data
-		self.id = uuid1().hex
+		self.id = uuid4().hex
 		self.time = 0
 
+	'''
 	def __repr__(self):
 		return f'id {self.id}, time {self.time}, length {self.length}'
+	'''
 
 	def is_in_work(self, current_time, timeout):
 		return current_time - self.time < timeout
@@ -86,28 +86,37 @@ class TaskQueueServer:
 
 		task = Task(length, data)
 		queue.append(task)
-		return f'task id {task.id}'
+		return f'task id {task.id}\n'
 
 
 	def get_command(self, queue_name):
-		# print(f'queue_name: {queue_name}, {type(queue_name)}')
 		queue = self.LIST_OF_QUEUES.get(queue_name)
-		# print(f'queue {queue}')
 		if queue:
 			for task in queue:
-				print(task, task.is_in_work(self.current_time, self.timeout))
 				if not task.is_in_work(self.current_time, self.timeout):
 					task.set_time()
-					return f'task id: {task.id}\nlength: {task.length}\ndata: {task.data}'
+					return f'task id: {task.id}\nlength: {task.length}\ndata: {task.data}\n'
 		return 'NONE\n'
 
 
-	def in_command(self):
-		return
+	def in_command(self, queue_name, task_id):
+		queue = self.LIST_OF_QUEUES.get(queue_name)
+		if queue:
+			for task in queue:
+				if task.id == task_id:
+					return 'YES\n'
+		return 'NO\n'
 
 
-	def ack_command(self):
-		return
+	def ack_command(self, queue_name, task_id):
+		queue = self.LIST_OF_QUEUES.get(queue_name)
+		if queue:
+			for task in queue:
+				if task.id == task_id and task.is_in_work(self.current_time, self.timeout):
+					queue.remove(task)
+					del task
+					return 'YES\n'
+		return 'NO\n'
 
 
 	def run(self):
@@ -129,19 +138,19 @@ class TaskQueueServer:
 			conn, addr = self.sock.accept()
 			data = self.recvall(conn).decode().rstrip().split()
 			answer = 'wrong commands'
-			if not data:
-				self.terminate(conn)
 
-			command = data[0]
-			function = self.commands.get(command)
-			if function:
-				try:
-					answer = function(*data[1:])
-				except TypeError:
-					pass
+			if data:
+				command = data[0]
+				function = self.commands.get(command)
+				self.current_time = int(datetime.now().timestamp())
+				if function:
+					try:
+						answer = function(*data[1:])
+					except:
+						pass
 
-			conn.sendall(answer.encode())
-			print(self.LIST_OF_QUEUES)
+				conn.sendall(answer.encode())
+				print(self.LIST_OF_QUEUES)
 			self.terminate(conn)
 
 
