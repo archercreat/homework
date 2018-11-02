@@ -7,7 +7,7 @@ from datetime import datetime
 import sys
 import os
 import pickle
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from uuid import uuid1
 
 
@@ -19,7 +19,7 @@ class Task:
 		self.time = 0
 
 	def __repr__(self):
-		return f'id ({self.id}), time ({self.time})'
+		return f'id {self.id}, time {self.time}, length {self.length}'
 
 	def is_in_work(self, current_time, timeout):
 		return current_time - self.time < timeout
@@ -52,8 +52,16 @@ class TaskQueueServer:
 		self.LIST_OF_QUEUES = self.load()
 
 
+# make load func
 	def load(self):
 		return {}
+
+
+
+
+	def terminate(self, conn):
+		conn.shutdown(1)
+		conn.close()
 
 
 	def recvall(self, conn):
@@ -66,8 +74,40 @@ class TaskQueueServer:
 		return data
 
 
-	def save(self):
+# commands
+	def save_command(self):
 		return 'OK\n'
+
+	def add_command(self, queue_name, length, data):
+		queue = self.LIST_OF_QUEUES.get(queue_name)
+		if not queue:
+			self.LIST_OF_QUEUES[queue_name] = deque()
+			queue = self.LIST_OF_QUEUES.get(queue_name)
+
+		task = Task(length, data)
+		queue.append(task)
+		return f'task id {task.id}'
+
+
+	def get_command(self, queue_name):
+		# print(f'queue_name: {queue_name}, {type(queue_name)}')
+		queue = self.LIST_OF_QUEUES.get(queue_name)
+		# print(f'queue {queue}')
+		if queue:
+			for task in queue:
+				print(task, task.is_in_work(self.current_time, self.timeout))
+				if not task.is_in_work(self.current_time, self.timeout):
+					task.set_time()
+					return f'task id: {task.id}\nlength: {task.length}\ndata: {task.data}'
+		return 'NONE\n'
+
+
+	def in_command(self):
+		return
+
+
+	def ack_command(self):
+		return
 
 
 	def run(self):
@@ -88,75 +128,21 @@ class TaskQueueServer:
 		while True:
 			conn, addr = self.sock.accept()
 			data = self.recvall(conn).decode().rstrip().split()
-			if data[0] == 'SAVE':
-				conn.send(self.save().encode())
-			else:
-				handle = ConnectionHandler(conn)
-				handle.operate()
-			conn.close()
+			answer = 'wrong commands'
+			if not data:
+				self.terminate(conn)
 
-'''
-class ConnectionHandler:
-	def __init__(self, conn):
-		self.conn = conn
-		self.commands = Commands()
-		# self.LIST_OF_QUEUES
+			command = data[0]
+			function = self.commands.get(command)
+			if function:
+				try:
+					answer = function(*data[1:])
+				except TypeError:
+					pass
 
-
-	def operate(self):
-		# print(f'You are here! {self.conn}')
-		# waiting for message
-		recv = self.conn.recv(1024).split()
-		if self.commands.parse(recv) is None:
-			self.conn.close()
-
-
-	def add_cmd(self, user_input):
-		in not user_input or len(user_input) != 3:
-			return
-		try:
-			str(queue_name), int(length), str(data) = user_input
-		except ValueError:
-			return
-		if length > 10**6 or length != len(data):
-			return
-
-
-	def in_cmd(self, user_input):
-		if not user_input or len(user_input) != 2:
-			return
-		queue_name, task_id = user_input
-		queue = self.LIST_OF_QUEUES.get(queue_name)
-		if not queue:
-			return
-
-		for task in queue['tasks']:
-			if task['id'] == task_id:
-				return b'YES'
-		return b'NO'
-
-	def get_cmd(self, user_input):
-		if not user_input or len(user_input) != 1:
-			return
-		queue_name = user_input
-		queue = self.LIST_OF_QUEUES.get(queue_name)
-		if not queue:
-			return 'NONE'
-		return queue		
-
-	def ack_cmd(self, user_input):
-		if not user_input or len(user_input) != 2:
-			return
-		queue_name, task_id = user_input
-		queue = self.LIST_OF_QUEUES.get(queue_name)
-		if not queue:
-			return
-		for task in queue['tasks']:
-			if task['id'] == task_id:
-				return 'YES'
-		return 'NO'
-'''
-
+			conn.sendall(answer.encode())
+			print(self.LIST_OF_QUEUES)
+			self.terminate(conn)
 
 
 def parse_args():
