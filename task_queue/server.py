@@ -16,11 +16,6 @@ class Task:
 		self.id = uuid4().hex
 		self.time = 0
 
-	'''
-	def __repr__(self):
-		return f'id {self.id}, time {self.time}, length {self.length}'
-	'''
-
 	def is_in_work(self, current_time, timeout):
 		return current_time - self.time < timeout
 
@@ -32,6 +27,7 @@ class Task:
 
 class TaskQueueServer:
 	filename = 'log'
+
 
 	def __init__(self, ip, port, path, timeout):
 		self.ip = ip
@@ -52,16 +48,14 @@ class TaskQueueServer:
 		self.LIST_OF_QUEUES = self.load()
 
 
-# make load func
 	def load(self):
 		try:
 			with open(self.filename, 'rb') as f:
 				data = pickle.load(f)
 			return data
 		except:
+			print(f'could not open {self.filepath}')
 			return {}
-
-
 
 
 	def terminate(self, conn):
@@ -83,7 +77,7 @@ class TaskQueueServer:
 	def save_command(self):
 		with open(self.filename, 'wb') as f:
 			pickle.dump(self.LIST_OF_QUEUES, f)
-		return 'OK\n'
+		return 'OK'
 
 
 	def add_command(self, queue_name, length, data):
@@ -138,8 +132,8 @@ class TaskQueueServer:
 			self.main()
 
 		except KeyboardInterrupt:
-			print('\nclosing server..') # save b4 exit
-			self.save_command()
+			print('\nclosing server..')
+			# self.save_command() # save b4 exit
 			self.sock.close()
 			sys.exit(0)
 
@@ -202,7 +196,3 @@ if __name__ == '__main__':
 	args = parse_args()
 	server = TaskQueueServer(**args.__dict__)
 	server.run()
-
-	# data = {"queue": "lol", "len": "6", "data": "123456"}
-
-
