@@ -54,7 +54,12 @@ class TaskQueueServer:
 
 # make load func
 	def load(self):
-		return {}
+		try:
+			with open(self.filename, 'rb') as f:
+				data = pickle.load(f)
+			return data
+		except:
+			return {}
 
 
 
@@ -76,17 +81,22 @@ class TaskQueueServer:
 
 # commands
 	def save_command(self):
+		with open(self.filename, 'wb') as f:
+			pickle.dump(self.LIST_OF_QUEUES, f)
 		return 'OK\n'
 
+
 	def add_command(self, queue_name, length, data):
+		if int(length) > 10**6:
+			return 'ERROR'
 		queue = self.LIST_OF_QUEUES.get(queue_name)
 		if not queue:
 			self.LIST_OF_QUEUES[queue_name] = deque()
 			queue = self.LIST_OF_QUEUES.get(queue_name)
-
 		task = Task(length, data)
 		queue.append(task)
-		return f'task id {task.id}\n'
+		return task.id
+		# return f'task id {task.id}\n'
 
 
 	def get_command(self, queue_name):
@@ -95,8 +105,9 @@ class TaskQueueServer:
 			for task in queue:
 				if not task.is_in_work(self.current_time, self.timeout):
 					task.set_time()
-					return f'task id: {task.id}\nlength: {task.length}\ndata: {task.data}\n'
-		return 'NONE\n'
+					return f'{task.id} {task.length} {task.data}'
+					#return f'task id: {task.id}\nlength: {task.length}\ndata: {task.data}\n'
+		return 'NONE'
 
 
 	def in_command(self, queue_name, task_id):
@@ -104,8 +115,8 @@ class TaskQueueServer:
 		if queue:
 			for task in queue:
 				if task.id == task_id:
-					return 'YES\n'
-		return 'NO\n'
+					return 'YES'
+		return 'NO'
 
 
 	def ack_command(self, queue_name, task_id):
@@ -115,9 +126,8 @@ class TaskQueueServer:
 				if task.id == task_id and task.is_in_work(self.current_time, self.timeout):
 					queue.remove(task)
 					del task
-					return 'YES\n'
-		return 'NO\n'
-
+					return 'YES'
+		return 'NO'
 
 	def run(self):
 		try:
@@ -128,7 +138,8 @@ class TaskQueueServer:
 			self.main()
 
 		except KeyboardInterrupt:
-			print('\nclosing server..')
+			print('\nclosing server..') # save b4 exit
+			self.save_command()
 			self.sock.close()
 			sys.exit(0)
 
@@ -137,7 +148,7 @@ class TaskQueueServer:
 		while True:
 			conn, addr = self.sock.accept()
 			data = self.recvall(conn).decode().rstrip().split()
-			answer = 'wrong commands'
+			answer = 'ERROR'
 
 			if data:
 				command = data[0]
@@ -146,7 +157,8 @@ class TaskQueueServer:
 				if function:
 					try:
 						answer = function(*data[1:])
-					except:
+					except Exception as e:
+						print(e)
 						pass
 
 				conn.sendall(answer.encode())
