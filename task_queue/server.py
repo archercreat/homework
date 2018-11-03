@@ -54,7 +54,7 @@ class TaskQueueServer:
 				data = pickle.load(f)
 			return data
 		except:
-			print(f'could not open {self.filepath}')
+			# print(f'could not open {self.filepath}')
 			return {}
 
 
@@ -81,7 +81,7 @@ class TaskQueueServer:
 
 
 	def add_command(self, queue_name, length, data):
-		if int(length) > 10**6:
+		if int(length) > 10**6 or int(length) != len(data):
 			return 'ERROR'
 		queue = self.LIST_OF_QUEUES.get(queue_name)
 		if not queue:
@@ -128,11 +128,11 @@ class TaskQueueServer:
 			self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			self.sock.bind((self.ip, self.port))
 			self.sock.listen()
-			print(f'server is running on {self.ip} on port {self.port}')
+			# print(f'server is running on {self.ip} on port {self.port}')
 			self.main()
 
 		except KeyboardInterrupt:
-			print('\nclosing server..')
+			# print('\nclosing server..')
 			# self.save_command() # save b4 exit
 			self.sock.close()
 			sys.exit(0)
@@ -156,7 +156,6 @@ class TaskQueueServer:
 						pass
 
 				conn.sendall(answer.encode())
-				print(self.LIST_OF_QUEUES)
 			self.terminate(conn)
 
 
