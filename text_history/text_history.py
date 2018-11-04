@@ -26,7 +26,6 @@ class TextHistory:
 		return job.to_version
 
 	def optimization(self, first, second):
-		# print(type(first))
 		prev = first[-1] if len(first) else None
 		if isinstance(prev, InsertAction) and isinstance(second, InsertAction):
 			if prev._pos + len(prev._text) == second.pos:
