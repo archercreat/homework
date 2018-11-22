@@ -1,51 +1,61 @@
-from functools import wraps
-
-class whenthen:
-    def __init__(self, func):
-        self._when = False
-        self.func = func
-
-    def __call__(self, *args, **kwags):
-        pass
-
-    def when(self, func):
-        if not self._when:
-            # code
-            self._when = True
-        else:
-            raise AttributeError("then is needed")
-
-    def then(self, func):
-        # code
-        self._when = False
+from collections import OrderedDict
 
 
-def main():
-    @whenthen
-    def fract(x):
-        return x * fract(x - 1)
+def whenthen(func):
+
+    class Wrapper:
+        def __init__(self, func):
+            self._func = func
+            self._dict = OrderedDict()
+
+        def __call__(self, *args, **kwargs):
+            if None in self._dict.values():
+                raise ValueError
+
+            for when_func, then_func in self._dict.items():
+                if when_func(*args, **kwargs):
+                    return self._dict[when_func](*args, **kwargs)
+
+            return self._func(*args, **kwargs)
+
+        def when(self, when_func):
+            if None in self._dict.values():
+                raise ValueError
+            else:
+                self._dict[when_func] = None
+                return self
+
+        def then(self, then_func):
+            last_key = next(reversed(self._dict.keys()))
+            if not self._dict[last_key] is None:
+                raise ValueError
+            else:
+                self._dict[last_key] = then_func
+                return self
+
+    return Wrapper(func)
 
 
-    @fract.when
-    def fract(x):
-        return x == 0
+@whenthen
+def fract(x):
+    return x * fract(x - 1)
 
 
-    @fract.then
-    def fract(x):
-        return 1
+@fract.when
+def fract(x):
+    return x == 0
 
 
-    @fract.when
-    def fract(x):
-        return x > 5
+@fract.then
+def fract(x):
+    return 1
 
 
-    @fract.then
-    def fract(x):
-        return x * (x - 1) * (x - 2) * (x - 3) * (x - 4) * fract(x - 5)
+@fract.when
+def fract(x):
+    return x > 5
 
-    print(fract(0))
 
-if __name__ == '__main__':
-    main()
+@fract.then
+def fract(x):
+    return x * (x - 1) * (x - 2) * (x - 3) * (x - 4) * fract(x - 5)
