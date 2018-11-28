@@ -36,16 +36,6 @@ class Storage:
                 return web.Response(text=self.friendly_find_response)
             raise web.HTTPNotFound()
 
-    async def _find_silently(self, request):
-        file = request.match_info.get('file')
-        if file in os.listdir(self._dir):
-            thread = threading.Thread(target=self._read_file, args=(file, ))
-            thread.start()
-            thread.join()
-            return web.Response(text=self.read_response)
-        else:
-            raise web.HTTPNotFound()
-
     def _async_find(self, file):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -82,10 +72,7 @@ class Storage:
 
     def run(self):
         app = web.Application()
-        app.add_routes([
-            web.get('/{file}', self._find),
-            web.get('/find/{file}', self._find_silently),
-        ])
+        app.add_routes([web.get('/find/{file}', self._find)])
         web.run_app(app, host=self._host, port=int(self._port))
 
 
