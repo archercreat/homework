@@ -20,20 +20,22 @@ class Daemon:
     # server part
     async def find(self, request):
         file = request.match_info.get('file')
-        print('asking for %s', file)
+        print('asking for', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
-        else:       # ask others
+        else:
             if self._others:
                 data = [await self.ask_others(f'http://{node["host"]}:{node["port"]}/find/{file}')
                     for node in self._others.values()]
-                #print('DATA',data)
-                return web.Response(text=''.join(data))
+                d = ''.join(data)
+                if d:
+                    return web.Response(text=d)
+                else:
+                    return web.Response(status=404)
+            # if no others
             else:
                 return web.Response(status=404)
-
-            # return web.Response(status=404)
 
     async def read(self, file):
         async with aiofiles.open(self._dir+'/'+file, 'r') as f:
