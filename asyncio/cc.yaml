@@ -1,0 +1,8 @@
+﻿host: localhost
+port: 8081
+dir: /tmp/b
+others:
+  0:
+      host: localhost
+      port: 8080
+save: True
