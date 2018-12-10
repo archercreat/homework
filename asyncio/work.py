@@ -19,21 +19,23 @@ class Daemon:
     # server part
     async def find(self, request):
         file = request.match_info.get('file')
+        print('looking for', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
         else:
             data = [await self.ask_others(f'http://{node["host"]}:{node["port"]}/lookup/{file}')
                     for node in self._others.values() if self._others]
-                d = ''.join(data)
-                if d:
-                    if self._save:
-                        await self.write(file, d)
-                    return web.Response(text=d)
+            d = ''.join(data)
+            if d:
+                if self._save:
+                    await self.write(file, d)
+                return web.Response(text=d)
             return web.Response(status=404)
 
     async def lookup(self, request):
         file = request.match_info.get('file')
+        print('lookup', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
