@@ -5,7 +5,4 @@ others:
   0:
       host: localhost
       port: 8081
-  1:
-      host: localhost
-      port: 8082
-save_from_others: True
+save: True

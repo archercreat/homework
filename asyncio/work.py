@@ -15,7 +15,6 @@ class Daemon:
         self._dir = dir
         self._others = others
         self._save = save
-        # print(self._others)
 
     # server part
     async def find(self, request):
@@ -26,16 +25,25 @@ class Daemon:
             return web.Response(text=data)
         else:
             if self._others:
-                data = [await self.ask_others(f'http://{node["host"]}:{node["port"]}/find/{file}')
+                data = [await self.ask_others(f'http://{node["host"]}:{node["port"]}/lookup/{file}')
                     for node in self._others.values()]
                 d = ''.join(data)
                 if d:
+                    if self._save:
+                        await self.write(file, d)
                     return web.Response(text=d)
+
                 else:
                     return web.Response(status=404)
-            # if no others
-            else:
                 return web.Response(status=404)
+
+    async def lookup(self, request):
+        file = request.match_info.get('file')
+        print('lookup', file)
+        if file in os.listdir(self._dir):
+            data = await self.read(file)
+            return web.Response(text=data)
+        return web.Response(text='')
 
     async def read(self, file):
         async with aiofiles.open(self._dir+'/'+file, 'r') as f:
@@ -44,7 +52,7 @@ class Daemon:
 
 
     async def write(self, file, data):
-        async with aiofiles.open(file, 'w') as f:
+        async with aiofiles.open(self._dir+'/'+file, 'w') as f:
             await f.write(data)
 
     # client part
@@ -58,7 +66,8 @@ class Daemon:
 
     def run(self):
         app = web.Application()
-        app.add_routes([web.get('/find/{file}', self.find)])
+        app.add_routes([web.get('/find/{file}', self.find),
+                        web.get('/lookup/{file}', self.lookup)])
         web.run_app(app, host=self._host, port=int(self._port))
 
 def load(file):
