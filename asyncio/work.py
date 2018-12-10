@@ -19,40 +19,34 @@ class Daemon:
     # server part
     async def find(self, request):
         file = request.match_info.get('file')
-        print('asking for', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
         else:
-            if self._others:
-                data = [await self.ask_others(f'http://{node["host"]}:{node["port"]}/lookup/{file}')
-                    for node in self._others.values()]
+            data = [await self.ask_others(f'http://{node["host"]}:{node["port"]}/lookup/{file}')
+                    for node in self._others.values() if self._others]
                 d = ''.join(data)
                 if d:
                     if self._save:
                         await self.write(file, d)
                     return web.Response(text=d)
-
-                else:
-                    return web.Response(status=404)
-                return web.Response(status=404)
+            return web.Response(status=404)
 
     async def lookup(self, request):
         file = request.match_info.get('file')
-        print('lookup', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
         return web.Response(text='')
 
     async def read(self, file):
-        async with aiofiles.open(self._dir+'/'+file, 'r') as f:
+        async with aiofiles.open(os.path.join(self._dir, file), 'r') as f:
             content = await f.read()
             return content
 
 
     async def write(self, file, data):
-        async with aiofiles.open(self._dir+'/'+file, 'w') as f:
+        async with aiofiles.open(os.path.join(self._dir, file), 'w') as f:
             await f.write(data)
 
     # client part
@@ -72,8 +66,7 @@ class Daemon:
 
 def load(file):
     with open(file, "r") as f:
-        data = f.read()
-    return yaml.load(data)
+        return yaml.load(f.read())
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description='Async File Storage')
