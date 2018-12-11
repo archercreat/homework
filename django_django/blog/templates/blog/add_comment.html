@@ -1,0 +1,23 @@
+{% extends 'blog/base.html' %}
+
+{% block content%}
+
+<h2>Создать комментарий</h2>
+
+<form action="{{ request.path }}" method="post">
+	{% csrf_token %}
+  <table>
+    <tr>
+      <td>{{form.text.label_tag}}</td>
+      <td>{{form.text}}</td>
+    </tr>
+
+    <tr>
+      <td>{{form.reply_to.label_tag}}</td>
+      <td>{{form.reply_to}}</td>
+    </tr>
+  </table>
+	<button type="submit" class="btn btn-primary">Создать комментарий</button>
+</form>
+
+{% endblock %}

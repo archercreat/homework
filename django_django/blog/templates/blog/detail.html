@@ -1,0 +1,21 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+
+<h1>{{ post.title }}</h1>
+<h6>{{ post.date }}</h6>
+<div class="well">
+  <h2>{{ post.text }}</h2>
+</div>
+
+{% for comment in post.comment_set.all %}
+<p>
+	{{ comment.date }}<br>
+  {{ comment.text }}
+  {% if comment.reply_to %}
+    <b>| Reply to {{ comment.reply_to.text }}</b>
+  {% endif %}
+</p>
+{% endfor %}
+<a href="add_comment" type="button" class="btn btn-primary">Добавить комментарий</a>
+{% endblock %}

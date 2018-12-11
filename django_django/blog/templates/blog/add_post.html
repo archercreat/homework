@@ -1,0 +1,20 @@
+{% extends 'blog/base.html' %}
+
+{% block content%}
+
+<h2>Создать пост</h2>
+
+<form action="{{ request.path }}" method="post">
+	{% csrf_token %}
+	{% for field in form %}
+		<div class="form-group">
+	    {%if not field.is_hidden %}
+		    {{ field.label_tag }}<br />
+	    {% endif %}
+	    {{ field }}
+		</div>
+    {% endfor %}
+	<button type="submit" class="btn btn-primary">Создать пост</button>
+</form>
+
+{% endblock %}

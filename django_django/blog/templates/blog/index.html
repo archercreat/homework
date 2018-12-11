@@ -1,0 +1,24 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+<form class="form-inline my-2 my-lg-0">
+  <input class="form-control mr-sm-2"
+         type="search"
+         placeholder="Search"
+         aria-label="Search"
+         name="Search">
+  <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+</form>
+<a href="?date=True"
+ class="btn btn-{% if 'date' in request.GET %}warning{% else %}primary{% endif %}"
+ style="magrin-bottom: 5px">sory by date</a>
+{% if all_posts %}
+  <ul>
+    {% for post in all_posts.values %}
+    <li><h2><a href="{{ post.id }}">{{ post.title }}</a></h2></li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <<h3>No Posts</h3>
+{% endif %}
+{% endblock %}
