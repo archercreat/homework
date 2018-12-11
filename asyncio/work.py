@@ -19,7 +19,6 @@ class Daemon:
     # server part
     async def find(self, request):
         file = request.match_info.get('file')
-        print('looking for', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
@@ -35,7 +34,6 @@ class Daemon:
 
     async def lookup(self, request):
         file = request.match_info.get('file')
-        print('lookup', file)
         if file in os.listdir(self._dir):
             data = await self.read(file)
             return web.Response(text=data)
@@ -43,9 +41,7 @@ class Daemon:
 
     async def read(self, file):
         async with aiofiles.open(os.path.join(self._dir, file), 'r') as f:
-            content = await f.read()
-            return content
-
+            return await f.read()
 
     async def write(self, file, data):
         async with aiofiles.open(os.path.join(self._dir, file), 'w') as f:
